@@ -1,0 +1,177 @@
+---
+title: Classification of Weight Lifting Exercises (Coursera Practical Machine Learning
+  final project)
+author: "Daigo Tanaka"
+date: "February 20, 2015"
+output: html_document
+---
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# setwd("/Users/daigo/projects/stats/practical-ml/course-project/")
+library(knitr)
+opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE)
+
+library(randomForest)
+
+# Set seed of pseudo random number generation for reproducibility
+set.seed(1254)
+
+# Load data
+training <- read.csv("./pml-training.csv", na.strings=c("", "NA", "NULL"))
+testing <- read.csv("./pml-testing.csv", na.strings=c("", "NA", "NULL"))
+
+# Exploratory data analysis
+columnNames = names(training)
+
+# Do not use columns with > 50% NAs
+cutOff = nrow(training) * 0.5
+colsUsed = c()
+for (i in 1:ncol(training)) {
+    colsUsed[i] = (
+        i == ncol(training) ||  # classe
+        length(training[!is.na(training[, i]), i]) >= cutOff &&
+        (class(training[1, i]) != "factor" || levels(training[1, i]) < 53))
+}
+
+# It looks like col X is IDs and classe is sorted that way so let's not use this
+# as predictor
+colsUsed[1] <- FALSE
+
+# Obviously use_name does nothing to do with the classifciation
+colsUsed[2] <- FALSE
+
+# Nor do time stamps...
+colsUsed[3] <- FALSE
+colsUsed[4] <- FALSE
+colsUsed[5] <- FALSE
+
+# What are new_window & num_window?
+colsUsed[6] <- FALSE
+colsUsed[7] <- FALSE
+
+length(subset(colsUsed, colsUsed == TRUE))
+
+trainingUsed = training[, colsUsed]
+
+initialModel <- randomForest(
+    trainingUsed$classe ~ .,
+    data=trainingUsed,
+    ntree=10)
+
+varImpPlot(initialModel)
+imp = importance(initialModel)
+variablesUsed = names(imp[order(-imp),])[1:10]
+
+variablesUsed
+
+# Do 10 fold cross validation
+k = 10
+
+# Assign each observation to one of 10 folds
+# Note that this replace=TRUE is NOT replacing the observation when sampling
+id <- sample(1:k, nrow(training), replace=TRUE)
+list <- 1:k
+
+prediction <- data.frame()
+actual <- data.frame()
+
+importantVars = c()
+for (i in 1:k){    
+    # Create training set from all training date except i-th fold
+    currentTraining <- subset(training, id %in% list[-i])
+    currentTesting <- subset(training, id %in% c(i))
+
+    currentModel <- randomForest(
+        currentTraining$classe ~
+            roll_belt +
+            yaw_belt +
+            magnet_dumbbell_z +
+            pitch_forearm +
+            magnet_dumbbell_y +
+            pitch_belt +
+            roll_forearm +
+            magnet_dumbbell_x +
+            accel_dumbbell_y +
+            accel_dumbbell_z,
+        data=currentTraining,
+        ntree=10)
+
+    message(paste("Model ", i))
+    print(currentModel$confusion)
+    
+    currentPrediction <- as.data.frame(predict(currentModel, currentTesting))
+    prediction <- rbind(prediction, currentPrediction)
+    
+    currentActual <- as.data.frame(currentTesting$classe)
+    actual <- rbind(actual, currentActual)
+}
+
+result <- cbind(prediction, actual[, 1])
+names(result) <- c("Predicted", "Actual")
+confusionMatrix = table(result)
+hit = 0
+for (i in 1:5) {
+    hit = hit + confusionMatrix[i, i]
+}
+accuracy = hit / sum(confusionMatrix)
+accuracy
+
+# Create the final model using all the training data
+finalModel <- randomForest(
+    training$classe ~
+        roll_belt +
+        yaw_belt +
+        magnet_dumbbell_z +
+        pitch_forearm +
+        magnet_dumbbell_y +
+        pitch_belt +
+        roll_forearm +
+        magnet_dumbbell_x +
+        accel_dumbbell_y +
+        accel_dumbbell_z,
+    data=training,
+    ntree=10)
+
+finalConfusionMatrix = finalModel$confusion[1:5,1:5]
+hit = 0
+for (i in 1:5) {
+    hit = hit + finalConfusionMatrix[i, i]
+}
+finalInSampleAccuracy = hit / sum(finalConfusionMatrix)
+finalInSampleAccuracy
+
+# Moment of truth with the testing data
+finalPrediction = as.character(predict(finalModel, testing))
+finalPrediction
+```
+
+## Introduction
+
+## Exploratory data analysis of training data
+
+## Building the model
+
+## Cross-validation
+
+### Expected out of sample error
+
+Confusion matrix
+Accuracy
+
+K-fold:
+Larger K = less bias, more variance
+Smaller K = more bias, less variance
+
+## Result with the test data
+
+```{r}
+# Produce the submission file
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = sprintf("answers/problem_id_%02d.txt",i)
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(finalPrediction)
+```

@@ -236,8 +236,8 @@ footnote("factors")
 
 Total of `r ncol(trainingUsed) - 1` predictors were used to create the initial
 model. Figure `r fn()` shows the mean decrease of Gini impurity for each
-variable. It can be observed from the plot that at most 20% of the variable are
-significantly contributing to decrease the impurity. To save the computation
+variable. It can be observed from the plot that at most 20% of the variables are
+significantly contributing to decrease the impurity. To save the processing
 load, the 10 most important variables are used to make the final model. The
 variables used in the final model are
 `r paste(variablesUsed[1:9], collapse=", ")`, and `r variablesUsed[10]`.
@@ -250,7 +250,8 @@ impPlot
 
 A K-fold cross validation (k=10) was performed to measure the accuracy of the
 model. Table `r tn()` shows the confusion matrix from the K-fold cross
-validation. The overall accuracy was `r 100 * accuracy`%.
+validation. The overall accuracy was `r 100 * accuracy`% (or estimated error
+rate of `r 100 * (1 - accuracy)`%).
 
 `r render_caption(tn("Confusion matrix from the K-fold Cross Validation (k=10)"))`
 
@@ -266,14 +267,16 @@ validation. The overall accuracy was `r 100 * accuracy`%.
 ### Expected out of sample error
 
 The high accuracy result from K-fold cross validation did not require further
-search of the models. Therefore, the final model was created using the entire
-training data set. With the order of magnitude smaller number of predictors than
-the initial model, it took only `r systemTime[3]` seconds (elapsed time) to
-build the model.
+search of the models. Using the 10 chosen predictors, the final model was created
+from the entire training data set.
 
-The in-sample accuracy of the final model was `r 100 * finalInSampleAccuracy`%,
-so one would guess the out of sample error to be higher than this. The accuracy
-seemed promising to perform the classification on the test data set.
+The in-sample accuracy of the final model was `r 100 * finalInSampleAccuracy`%.
+So the out of sample error is expected to be higher than
+`r 100 * (1.0 - finalInSampleAccuracy)`%. The accuracy seemed to be promising
+for this model to be used to classify the test data set.
+
+With the order of magnitude smaller number of predictors than the initial model,
+it took only `r systemTime[3]` seconds of elapsed time to build the model.
 
 ## Result with the test data
 

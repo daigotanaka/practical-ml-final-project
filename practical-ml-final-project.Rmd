@@ -199,9 +199,9 @@ armband, lumbar belt and dumbbell while the participants lift the dumbbell in
 the common mistakes.
 
 Given a training dataset, the goal is to generate a machine learning model to
-accurately classify the separte test dataset into the 5 patterns. This
+accurately classify the separate test dataset into the 5 patterns. This
 classification exercise was done in part to complete coursera Data Science
-Specialization track. The assignment challenges the students to classfiy the
+Specialization track. The assignment challenges the students to classify the
 final test data of 20 observations, and the model presented in the report
 achieved 100% accuracy.
 
@@ -219,10 +219,10 @@ dumbbell only halfway), Class D (lowering the dumbbell only halfway), or Classs
 E(throwing the hips to the front).
 
 There are `r ncol(training)` columns in the data table, however;
-`r length(naCounts[naCounts < nrow(training)])` of them contained N/A only.
+`r length(naCounts[naCounts < 1])` of them contained N/A only.
 Besides, the fist 7 columns (`r paste(columnNames[1:7], collapse=", ")`) are
 IDs for users and observations, time stamps, or window information that should
-not be used to classfiy. Those columns are excluded from the predictors.
+not be used to classify. Those columns are excluded from the predictors.
 
 ## Building the model
 
@@ -234,15 +234,17 @@ columns that has more than 53 levels of factors.
 footnote("factors")
 ```
 
+Total of `r ncol(trainingUsed) - 1` predictors were used to create the initial
+model. Figure `r fn()` shows the mean decrease of Gini impurity for each
+variable. It can be observed from the plot that at most 20% of the variable are
+significantly contributing to decrease the impurity. To save the computation
+load, the 10 most important variables are used to make the final model. The
+variables used in the final model are
+`r paste(variablesUsed[1:9], collapse=", ")`, and `r variablesUsed[10]`.
+
 ```{r, html.cap=fn("The Random Forest predictors sorted by the importance measured by mean decrease of Gini impurity.")}
 impPlot
 ```
-
-Total of `r ncol(trainingUsed) - 1` predictors were used to create the initial
-model. Figure `r fn()` shows the mean decrease of Gini impurity for each
-variable. To save the computation load, the 10 most important variables are used
-to make the final model. The variables used in the final model are
-`r paste(variablesUsed[1:9], collapse=", ")`, and `r variablesUsed[10]`.
 
 ## Cross-validation
 
@@ -271,7 +273,7 @@ build the model.
 
 The in-sample accuracy of the final model was `r 100 * finalInSampleAccuracy`%,
 so one would guess the out of sample error to be higher than this. The accuracy
-seemed promissing to perform the classification on the test data set.
+seemed promising to perform the classification on the test data set.
 
 ## Result with the test data
 
